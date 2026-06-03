@@ -1,0 +1,838 @@
+---
+title: "Introduction to Regression-Based Hypothesis Testing: Part 2"
+author: "<br><br><span style='font-size:25px;'><strong>Lesley Chapman Hannah, Ph.D., M.S.</strong></span><br>College of Graduate Studies<br>Northeast Ohio Medical University"
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    chalkboard: true
+    transition: fade
+    incremental: false
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+### Lecture Overivew
+
+::: {style="font-size:0.76em"}
+
+
+Previous lecture introduced:
+
+- regression as an extension of earlier hypothesis-testing methods
+- regression coefficients as population parameters
+- null and alternative hypotheses for regression coefficients
+- regression test statistics
+- p-values and decision rules in regression settings
+
+
+Lecture focus: practical applications of hypothesis testing within regression analysis.
+
+Extend hypothesis testing into regression settings using linear and logistic regression models:
+
+- **linear regression** for continuous outcomes
+- **logistic regression** for binary outcomes
+
+
+:::
+
+---
+
+## Lecture Goals
+
+::: {style="font-size:0.76em"}
+
+By the end of this lecture, students should be able to:
+
+- translate applied biomedical questions into regression-based hypothesis tests
+- identify the regression coefficient being tested
+- distinguish unadjusted and adjusted regression models
+- interpret linear regression coefficients for continuous outcomes
+- interpret logistic regression coefficients, odds ratios, and predicted probabilities for binary outcomes
+- connect P-values and confidence intervals to scientific conclusions
+- explain why statistical significance and biomedical importance are related but not identical
+
+:::
+
+---
+
+### Review: Regression Test Statistic
+
+::: {style="font-size:0.76em"}
+
+Hypothesis tests are constructed using a regression test statistic:
+
+$$
+\frac{\text{estimate} - \text{hypothesized value}}{\text{standard error}}
+$$
+
+- estimate represents a regression coefficient while the standard error quantifies the expected sampling variability of that estimate
+
+- test statistic measures how far the observed coefficient is from the null hypothesis after accounting for uncertainty in the data
+
+- large absolute test statistic values provide stronger evidence against the null hypothesis and lead to smaller p-values
+
+**Current lecture** will discuss the application and interpretation of these regression hypothesis tests within linear and logistic regression models
+:::
+
+---
+
+
+### Evaluating Associations with Regression Models
+
+
+::: {style="font-size:0.6em"}
+
+Regression analysis is useful when the scientific question involves several patient, disease, or treatment characteristics simultaneously
+
+Regression hypothesis testing helps answer whether the observed association is stronger than expected under the null hypothesis of no population association
+
+| Applied research question | Outcome type | Regression model |
+|---|---:|---:|
+| Is tumor stage associated with tumor biomarker level? | Continuous | Linear regression |
+| Is mutation status associated with treatment response? | Binary | Logistic regression |
+| How large is the estimated association? | Continuous or binary | Coefficient, confidence interval, or odds ratio |
+
+
+
+:::
+
+---
+
+### Review: Regression Hypothesis Test
+
+::: {style="font-size:0.76em"}
+
+For a single regression coefficient hypotheses include:
+
+$$
+H_0: \beta_j = 0
+$$
+
+$$
+H_a: \beta_j \neq 0
+$$
+
+`null hypothesis` : states that the predictor has no association with the outcome
+
+`alternative hypothesis` : states that the predictor has an association with the outcome
+
+:::
+
+---
+
+### Review: Regression Test Statistic
+
+::: {style="font-size:0.6em"}
+
+A regression test statistic has the form:
+
+$$
+\text{test statistic} = \frac{\hat{\beta}_j - \beta_{j,0}}{SE(\hat{\beta}_j)}
+$$
+
+- `regression test statistic`: estimated coefficient minus the hypothesized coefficient value, divided by the standard error of the estimated coefficient
+
+- statistic measures how many standard errors the estimated coefficient is from the null value.
+
+Decision Rule
+
+
+Reject $H_0$ if:
+
+$$
+P\text{-value} \leq \alpha
+$$
+
+Fail to reject $H_0$ if:
+
+$$
+P\text{-value} > \alpha
+$$
+
+- statistical significance : sample provides enough evidence to reject the null hypothesis at the selected significance level
+
+:::
+
+---
+
+### Example Study Background
+
+::: {style="font-size:0.76em"}
+
+Investigators are studying factors associated with disease severity and treatment outcomes in a cohort of cancer patients.
+
+Available variables include age, tumor stage, mutation status, and baseline disease burden.
+
+**Research goal**: determine whether these characteristics are associated with clinical outcomes 
+
+Regression models will be used to estimate these associations and hypothesis tests will be used to evaluate the evidence supporting them
+:::
+
+---
+
+### Primary Research Question(s)
+
+::: {style="font-size:0.76em"}
+
+Study focuses on two research questions:
+
+**Question 1 [Continuous Outcome]**
+
+Is tumor marker level associated with patient and disease characteristics such as tumor stage, mutation status, age, and baseline disease burden?
+
+**Question 2 [Binary Outcome]**
+
+Is treatment response associated with patient and disease characteristics such as tumor stage, mutation status, age, and baseline disease burden?
+
+Regression hypothesis testing will be used to evaluate whether the estimated associations differ from zero
+:::
+
+---
+
+
+## R Packages Used
+
+::: {style="font-size:0.76em"}
+
+This lecture uses the **tidyverse** collection of R packages.
+
+The tidyverse includes tools for data organization, summarization, and visualization.
+
+Within the tidyverse:
+
+- **dplyr** supports data manipulation
+- **ggplot2** supports plotting
+- `lm()` fits linear regression models
+- `glm(..., family = binomial)` fits logistic regression models
+
+:::
+
+
+---
+
+### Simulated Dataset
+
+::: {style="font-size:0.6em"}
+
+```{r, echo=FALSE}
+#| label: simulate-practical-biomedical-data
+library(tidyverse)
+
+set.seed(411)
+
+n <- 420
+
+cancer_df <- tibble(
+  id = 1:n,
+  age = round(rnorm(n, mean = 61, sd = 9)),
+  stage = sample(
+    c("I", "II", "III", "IV"),
+    n,
+    replace = TRUE,
+    prob = c(0.24, 0.31, 0.27, 0.18)
+  ),
+  mutation_status = sample(
+    c("Mutation absent", "Mutation present"),
+    n,
+    replace = TRUE,
+    prob = c(0.68, 0.32)
+  ),
+  baseline_burden = round(rlnorm(n, meanlog = 2.4, sdlog = 0.45), 1)
+) |>
+  mutate(
+    stage_num = recode(stage, "I" = 1, "II" = 2, "III" = 3, "IV" = 4),
+    mutation_binary = if_else(mutation_status == "Mutation present", 1, 0),
+
+    # Simulated PSA levels (ng/mL)
+    tumor_marker = round(
+      pmax(
+        0.2,
+        2 +
+        4.5 * stage_num +
+        2.5 * mutation_binary +
+        0.05 * age +
+        0.18 * baseline_burden +
+        rnorm(n, mean = 0, sd = 3)
+      ),
+      1
+    ),
+
+    response_prob = plogis(
+      1.35 -
+      0.52 * stage_num -
+      0.65 * mutation_binary -
+      0.02 * baseline_burden +
+      0.01 * (65 - age)
+    ),
+
+    response = rbinom(n, size = 1, prob = response_prob),
+
+    response_label = if_else(response == 1, "Response", "No response")
+  )
+
+cancer_df |>
+  select(
+    id, age, stage, mutation_status,
+    baseline_burden, tumor_marker,
+    response_label
+  ) |>
+  slice_head(n = 8)
+
+
+```
+
+**Dataset Overview**
+
+- 420 patients where each row represents a single patient
+
+Key variables include:
+
+- age
+- tumor stage
+- mutation status
+- baseline disease burden
+- tumor marker level 
+- treatment response
+
+
+:::
+
+---
+
+### Model Selection and Outcome Type
+
+::: {style="font-size:0.6em"}
+
+| Outcome | Outcome type | Example question | Model |
+|---|---:|---|---:|
+| Tumor biomarker level | Continuous | Is expected marker level higher at later stages? | Linear regression |
+| Treatment response | Binary | Are odds of response different by mutation status? | Logistic regression |
+
+**Tumor Biomarker: PSA**
+
+- PSA [Prostate-Specific Antigen] level: A continuous blood-based biomarker commonly used in prostate cancer assessment and monitoring
+- higher PSA levels may indicate larger tumor burden, more advanced disease, or cancer progression
+- PSA is measured numerically (ng/mL), making it suitable for continuous outcome analyses
+- PSA levels may vary according to tumor stage, mutation status, age, and baseline disease burden
+- PSA levels listed in column labeled `tumor_marker`
+- linear regression can be used to estimate how expected PSA levels change across patient and disease characteristics
+
+:::
+
+---
+
+
+### Linear Regression
+
+::: {style="font-size:0.76em"}
+
+- linear regression is used when the outcome variable is continuous
+- Goal : evaluate associations between one or more predictors and the expected outcome value
+
+
+Research question:
+
+> Is tumor stage associated with expected tumor marker level after accounting for age, mutation status, and baseline disease burden?
+
+- linear regression allows variables to be evaluated simultaneously while estimating the unique association between tumor stage and the outcome
+
+- hypothesis test evaluates whether the estimated stage coefficient differs from zero
+:::
+---
+
+## Linear Regression Model
+
+::: {style="font-size:0.6em"}
+
+A multivariable linear regression model can be written as:
+
+$$
+E(Y \mid X_i) = \beta_0 + \beta_1X_1 + \beta_2X_2 + \beta_3X_3 + \beta_4X_4
+$$
+
+Formula interpretation: expected continuous outcome is modeled as a linear function of multiple predictors.
+
+Where:
+
+- $Y$ : tumor biomarker level
+- $X_1$ : tumor stage
+- $X_2$ : age
+- $X_3$ : mutation status
+- $X_4$ : baseline disease burden
+
+:::
+
+---
+
+## Linear Regression Model
+
+::: {style="font-size:0.76em"}
+
+$$
+E(Y \mid X_i) = \beta_0 + \beta_1X_1 + \beta_2X_2 + \beta_3X_3 + \beta_4X_4
+$$
+
+- $E(Y \mid X_i)$ : expected tumor biomarker level for a given set of predictor values
+- $\beta_0$ : intercept
+- $\beta_1$ : expected difference in tumor biomarker level for a one-unit increase in tumor stage, holding other variables constant
+- remaining coefficients  interpreted while holding the other included variables constant
+
+:::
+
+---
+
+## Linear Regression Hypothesis Test
+
+::: {style="font-size:0.6em"}
+
+- test evaluates whether tumor stage is associated with expected tumor biomarker level after accounting for age, mutation status, and baseline disease burden
+
+- Biology Background: tumor stage describes how large a cancer is and how far it has spread in the body. Stages range from Stage 0, where abnormal cells are present but have not spread, to Stage IV, where cancer has spread to distant parts of the body, with Stages I–III representing increasing tumor size and/or spread to nearby tissues or lymph nodes
+
+Tumor stage the coefficient of interest : $\beta_{stage}$
+
+Null hypothesis :
+
+$$
+H_0: \beta_{stage} = 0
+$$
+
+Alternative hypothesis:
+
+$$
+H_a: \beta_{stage} \neq 0
+$$
+
+
+
+:::
+
+---
+
+### Fit the Linear Regression Model
+::: {style="font-size:0.6em"}
+```{r}
+#| label: fit-linear-regression-model
+linear_model <- lm(
+  tumor_marker ~ stage_num + age + mutation_binary + baseline_burden,
+  data = cancer_df
+)
+
+summary(linear_model)
+```
+
+:::
+---
+
+### Evaluate Linear Regression Results
+::: {style="font-size:0.6em"}
+```{r}
+#| label: extract-linear-regression-results
+linear_results <- coef(summary(linear_model)) |>
+  as.data.frame() |>
+  rownames_to_column("term") |>
+  as_tibble() |>
+  rename(
+    estimate = Estimate,
+    std_error = `Std. Error`,
+    test_statistic = `t value`,
+    p_value = `Pr(>|t|)`
+  )
+
+linear_results
+```
+
+For each coefficient, the output includes:
+
+- **Estimate**: estimated coefficient from the sample data
+- **Std. Error**: estimated sampling variability of the coefficient
+- **t value**: coefficient divided by its standard error
+- **Pr(>|t|)**: P-value for the two-sided coefficient test
+
+
+:::
+---
+
+### Evaluate Linear Regression Results
+::: {style="font-size:0.6em"}
+```{r}
+#| label: extract-linear-regression-results1
+linear_results <- coef(summary(linear_model)) |>
+  as.data.frame() |>
+  rownames_to_column("term") |>
+  as_tibble() |>
+  rename(
+    estimate = Estimate,
+    std_error = `Std. Error`,
+    test_statistic = `t value`,
+    p_value = `Pr(>|t|)`
+  )
+
+linear_results
+```
+
+**Example Interpretation**:
+
+- coefficient for `stage_num` estimates the expected difference in tumor biomarker level associated with a one-stage increase in tumor stage
+
+- positive coefficient : later tumor stage is associated with a higher expected tumor marker level
+
+- `stage_num`: p-value evaluates whether the observed stage coefficient is unlikely under the null hypothesis that the population coefficient is zero
+
+- small p-value suggests the observed relationship between the predictor and biomarker level is unlikely to be due to random sampling variability alone
+
+:::
+---
+
+
+### Logistic Regression: Practical Application
+
+::: {style="font-size:0.6em"}
+
+Logistic regression is used when the outcome variable has only two possible categories
+
+Here we address:
+
+> After accounting for tumor stage, age, and baseline disease burden, is mutation status associated with higher or lower odds of treatment response?
+
+In this study, the outcome is treatment response [`response_label`]:
+
+  1 : response
+  
+  0 : no response
+
+Note:
+
+  - positive regression coefficients correspond to higher odds of response
+  - negative regression coefficients correspond to lower odds of response
+  - hypothesis tests and p-values evaluate whether the observed associations are likely to reflect true association
+
+:::
+
+---
+
+
+
+### Logistic Regression Model
+
+::: {style="font-size:0.6em"}
+
+logistic regression formula states that the log-odds of the binary outcome are modeled as a linear function of the predictors:
+
+$$
+\log\left(\frac{p}{1-p}\right) = \beta_0 + \beta_1X_1 + \beta_2X_2 + \beta_3X_3 + \beta_4X_4
+$$
+Where:
+
+- $p$ : probability of treatment response
+- $1-p$ : probability of no response
+- $\frac{p}{1-p}$ : odds of response
+- $\log\left(\frac{p}{1-p}\right)$ : log-odds of response
+- $\beta_1$ : change in log-odds associated with the predictor, holding other variables constant.
+
+Note: log-odds are difficult to interpret directly therefore logistic regression coefficients are often exponentiated to produce odds ratios
+
+:::
+
+---
+
+### Odds Ratio Interpretation
+
+::: {style="font-size:0.76em"}
+
+Exponentiating a logistic regression coefficient converts the estimate from the log-odds scale to the odds-ratio scale
+
+$$
+OR = e^{\hat{\beta}}
+$$
+
+Example: 
+
+For mutation status, the odds ratio compares the odds of response for patients with mutation present to patients with mutation absent, holding tumor stage, age, and baseline disease burden constant
+
+:::
+
+---
+
+### Interpreting Odds Ratios
+
+::: {style="font-size:0.76em"}
+
+- odds ratio = 1 : no difference in odds
+
+- odds ratio > 1 : predictor is associated with higher odds of the outcome
+
+- odds ratio < 1 : predictor is associated with lower odds of the outcome
+
+- hypothesis test evaluates whether the coefficient equals zero on the log-odds scale
+
+
+:::
+
+---
+
+
+## Logistic Regression Hypothesis Test
+
+::: {style="font-size:0.6em"}
+
+Coefficient of interest mutation status $\beta_{\text{mutation}}$
+
+Hypothesis test evaluates whether mutation status is associated with treatment response after adjusting for other covariates [tumor stage, age, and baseline disease burden]
+
+Null hypothesis:
+
+$$
+H_0: \beta_{mutation} = 0
+$$
+
+Alternative hypothesis:
+
+$$
+H_a: \beta_{mutation} \neq 0
+$$
+
+Interpretation:
+
+- under $H_0$: mutation status has no association with the odds of response after adjustment for other variables
+- small p-value provides evidence that mutation status is associated with different odds of treatment response in the population
+
+:::
+
+---
+
+### Fit the Logistic Regression Model
+
+::: {style="font-size:0.6em"}
+
+```{r}
+#| label: fit-logistic-regression-model
+logistic_model <- glm(
+  response ~ mutation_binary + stage_num + age + baseline_burden,
+  data = cancer_df,
+  family = binomial
+)
+
+summary(logistic_model)
+```
+
+
+
+:::
+
+---
+
+### Evaluate Logistic Regression Results
+
+::: {style="font-size:0.6em"}
+
+```{r, echo=FALSE}
+
+logistic_results <- coef(summary(logistic_model)) |>
+  as.data.frame() |>
+  rownames_to_column("term") |>
+  as_tibble() |>
+  rename(
+    estimate_log_odds = Estimate,
+    std_error = `Std. Error`,
+    z_statistic = `z value`,
+    p_value = `Pr(>|z|)`
+  ) |>
+  mutate(
+    odds_ratio = exp(estimate_log_odds)
+  )
+
+logistic_results
+```
+
+Output reports one row for each coefficient
+
+For each coefficient:
+
+- **Estimate**: estimated coefficient on the log-odds scale
+- **Std. Error**: estimated sampling variability of the log-odds coefficient
+- **z value**: coefficient divided by its standard error
+- **Pr(>|z|)**: p-value for the two-sided coefficient test
+
+:::
+---
+
+### Evaluate Logistic Regression Results
+
+::: {style="font-size:0.6em"}
+
+```{r, echo=FALSE}
+
+logistic_results <- coef(summary(logistic_model)) |>
+  as.data.frame() |>
+  rownames_to_column("term") |>
+  as_tibble() |>
+  rename(
+    estimate_log_odds = Estimate,
+    std_error = `Std. Error`,
+    z_statistic = `z value`,
+    p_value = `Pr(>|z|)`
+  ) |>
+  mutate(
+    odds_ratio = exp(estimate_log_odds)
+  )
+
+logistic_results
+```
+
+**Interpretation**
+
+model estimates how each predictor is associated with the odds of treatment response while holding the remaining variables constant: 
+
+Mutation Status [`mutation_binary`]
+
+  - estimated log-odds coefficient : -0.774
+  - odds ratio : 0.461
+  - p-value : 0.000741
+  
+patients with the mutation have approximately 54% lower odds of treatment response compared with patients without the mutation, after accounting for tumor stage, age, and baseline disease burden
+
+small p-value provides strong evidence that the population mutation-status coefficient differs from zero
+
+:::
+---
+
+### Evaluate Logistic Regression Results
+
+::: {style="font-size:0.6em"}
+
+```{r, echo=FALSE}
+
+logistic_results <- coef(summary(logistic_model)) |>
+  as.data.frame() |>
+  rownames_to_column("term") |>
+  as_tibble() |>
+  rename(
+    estimate_log_odds = Estimate,
+    std_error = `Std. Error`,
+    z_statistic = `z value`,
+    p_value = `Pr(>|z|)`
+  ) |>
+  mutate(
+    odds_ratio = exp(estimate_log_odds)
+  )
+
+logistic_results
+```
+
+**Interpretation**
+
+Tumor Stage [`stage_num`]
+
+- estimated log-odds coefficient = -0.543
+- odds ratio = 0.581
+- p-value = 3.93 × 10⁻⁷
+
+every one-stage increase in tumor stage is associated with approximately 42% lower odds of treatment response holding the remaining variables constant
+
+small p-value provides strong evidence that tumor stage is associated with treatment response in the population
+
+:::
+---
+
+### Evaluate Logistic Regression Results
+
+::: {style="font-size:0.6em"}
+
+```{r, echo=FALSE}
+
+logistic_results <- coef(summary(logistic_model)) |>
+  as.data.frame() |>
+  rownames_to_column("term") |>
+  as_tibble() |>
+  rename(
+    estimate_log_odds = Estimate,
+    std_error = `Std. Error`,
+    z_statistic = `z value`,
+    p_value = `Pr(>|z|)`
+  ) |>
+  mutate(
+    odds_ratio = exp(estimate_log_odds)
+  )
+
+logistic_results
+```
+
+**Interpretation**
+
+Age [`age`]
+
+- estimated log-odds coefficient = 0.0015
+- odds ratio = 1.002
+- p-value = 0.889
+
+after accounting for the other predictors, age shows little association with treatment response
+
+coefficient is close to zero, the odds ratio is close to one, and the p-value indicates that the observed effect is consistent with sampling variability
+
+:::
+---
+
+### Evaluate Logistic Regression Results
+
+::: {style="font-size:0.6em"}
+
+```{r, echo=FALSE}
+
+logistic_results <- coef(summary(logistic_model)) |>
+  as.data.frame() |>
+  rownames_to_column("term") |>
+  as_tibble() |>
+  rename(
+    estimate_log_odds = Estimate,
+    std_error = `Std. Error`,
+    z_statistic = `z value`,
+    p_value = `Pr(>|z|)`
+  ) |>
+  mutate(
+    odds_ratio = exp(estimate_log_odds)
+  )
+
+logistic_results
+```
+
+**Interpretation**
+
+Baseline Disease Burden [`baseline_burden`]
+
+- estimated log-odds coefficient = -0.012
+- odds ratio = 0.988
+- p-value = 0.482
+
+baseline disease burden shows a small estimated negative association with treatment response
+
+p-value indicates insufficient evidence that the population coefficient differs from zero
+
+**Summary**
+
+- tumor stage and mutation status are significantly associated with treatment response
+- age and baseline disease burden do not provide strong evidence of association after adjustment for the other variables
+
+:::
+---
+
+### Lecture Summary
+
+::: {style="font-size:0.6em"}
+
+* application of hypothesis testing within regression analysis
+* regression hypothesis tests evaluate whether a predictor is associated with an outcome
+* `null hypothesis`: the regression coefficient equals a specified value.
+* `alternative hypothesis`: the regression coefficient differs from the specified null value
+* regression test statistics measure how far an estimated coefficient is from its null value after accounting for sampling variability
+* p-values provide evidence for evaluating whether the observed coefficient is consistent with the null hypothesis
+* linear regression hypothesis tests are used when the outcome is continuous
+* logistic regression hypothesis tests are used when the outcome is binary
+
+:::
+---
+
+

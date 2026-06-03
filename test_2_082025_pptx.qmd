@@ -1,0 +1,658 @@
+---
+title: "Extending Hypothesis Testing to Multiple Comparisons"
+author: "<br><br><span style='font-size:25px;'><strong>Lesley Chapman Hannah, Ph.D., M.S.</strong></span><br>College of Graduate Studies<br>Northeast Ohio Medical University"
+format: pptx
+
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+### Module Review
+
+::: {style="font-size:0.6em"}
+
+`hypothesis testing` : statistical approach used to evaluate whether sample data provide sufficient evidence against a claim about a population
+
+General hypothesis-testing framework:
+
+- defining a population parameter of interest
+- stating null and alternative hypotheses
+- calculating a test statistic
+- determining a P-value
+- evaluating evidence against the null hypothesis
+- drawing a conclusion in context
+
+Hypothesis testing focuses on evaluating one research question at a time
+
+Examples:
+
+- Is a population mean different from a benchmark?
+- Are two group means different?
+- Are two population proportions different?
+- Is a predictor associated with an outcome?
+
+:::
+
+---
+
+### Module Review
+
+::: {style="font-size:0.6em"}
+
+Biomedical inquiries often involve evaluating multiple feature simultaneously - biomarkers, clinical variables, treatment effects, genetic factors, or regression coefficients - within the same study
+
+For example, a cancer study may simultaneously evaluate whether:
+
+- tumor stage predicts survival
+- age predicts survival
+- mutation status predicts survival
+- treatment exposure predicts survival
+
+These studies often generate many hypothesis tests rather than a single test
+
+When numerous tests are performed, statistically significant results may occur by chance alone
+
+Multiple hypothesis testing focuses on interpreting results across many statistical tests
+
+:::
+
+---
+
+### Definition: Multiple Hypothesis Testing
+
+::: {style="font-size:0.6em"}
+
+`multiple hypothesis testing` : process of evaluating two or more statistical hypotheses within a single study or analysis
+
+- when number of hypothesis tests increases $\rightarrow$ probability of obtaining false-positive [Type I error rate] results by chance increases
+
+Examples include:
+
+- testing hundreds of genes for differential expression
+- testing thousands of genomic variants
+- evaluating many biomarkers simultaneously
+- screening multiple clinical outcomes
+
+Each test produces its own:
+
+- null hypothesis
+- test statistic
+- p-value : evaluation of hundreds or thousands of p-values simultaneously
+
+Note: probability of obtaining false positive findings increases as the number of tests increases
+
+:::
+---
+
+### Why Multiple Testing Procedures Are Needed
+
+::: {style="font-size:0.6em"}
+
+- hypothesis testing is designed to evaluate evidence against a null hypothesis
+
+- when a single hypothesis test is performed, the probability of a false positive is controlled by the selected significance level: α
+
+- when many hypothesis tests are performed simultaneously, opportunities for false positive findings increase
+
+As a result:
+
+- statistically significant findings may occur by chance alone
+- number of false discoveries increases
+- scientific conclusions become less reliable
+- follow-up studies may fail to replicate reported findings
+
+Multiple-testing procedures extend the hypothesis-testing framework to settings involving many simultaneous tests.
+
+Multiple-testing involves two key goals:
+
+- identify true associations
+- limit false positive findings
+
+
+:::
+---
+
+### Motivation for Multiple Testing Corrections
+
+::: {style="font-size:0.76em"}
+
+Consider: to understand why multiple testing can lead to false positives, consider a situation where all null hypotheses are actually true
+
+If α=0.05 then each individual hypothesis test has a 5% probability of producing a false positive result
+
+When many tests are performed false positives accumulate
+
+Examples:
+
+| Number of Tests | Expected False Positives |
+|-----------------|--------------------------|
+| 10              | 0.5                      |
+| 100             | 5                        |
+| 1000            | 50                       |
+
+Note : even when no true associations exist, statistically significant results can still appear
+
+:::
+---
+
+### Goals and Approaches for Multiple Hypothesis Testing
+
+::: {style="font-size:0.76em"}
+
+Multiple-testing procedures attempt to balance two competing objectives:
+
+**1. Identify true biological signals**
+
+Discovering meaningful associations that may improve scientific understanding
+
+**2. Limit false positive findings**
+
+Avoid reporting associations that arise only from random variation
+
+:::
+---
+
+
+
+### Goals and Approaches for Multiple Hypothesis Testing
+
+::: {style="font-size:0.76em"}
+
+Two Approaches for Multiple Testing:
+
+`Family-Wise Error Rate [FWER]`: method that controls the probability of making at least one false positive across all tests
+
+Method: Bonferroni correction
+
+`False Discovery Rate [FDR]` : controls the expected proportion of false positives among significant findings
+
+Method: Benjamini-Hochberg procedure
+
+:::
+---
+
+### When to Apply Multiple Hypothesis Corrections
+
+::: {style="font-size:0.6em"}
+
+Consider:
+
+> Are multiple hypothesis tests being interpreted as part of the same study or analysis?
+
+Multiple hypothesis correction should be applied whenever several p-values are generated from related questions
+
+Apply approach if repeated testing increases the chance of false discoveries
+
+Examples:
+
+- 5–20 related tests: multiple-testing correction should usually be considered
+- dozens to thousands of tests: correction is generally expected
+- high-dimensional omics studies: FDR correction is standard
+
+:::
+
+---
+
+### Controlling False Positives in Multiple Hypothesis Testing
+
+::: {style="font-size:0.6em"}
+
+When many hypothesis tests are performed, one can decide how they want to control false positives
+
+| Question | FWER | FDR |
+|:----------|:----------|:----------|
+| What is controlled? | Probability of making one or more false positive conclusions anywhere in the entire study | Proportion of significant findings that are expected to be false positives |
+| Common method | Bonferroni correction | Benjamini-Hochberg procedure |
+| Stringency | Very conservative | Less conservative |
+| Statistical power | Lower | Higher |
+| Best for | Confirmatory analyses | Exploratory analyses |
+
+
+:::
+---
+
+#### Controlling False Positives in Multiple Hypothesis Testing
+
+::: {style="font-size:0.5em"}
+
+**Family-Wise Error Rate [FWER]**
+
+- when single false positive would be costly
+- results may directly influence clinical decisions
+- regulatory or confirmatory studies are being conducted
+- number of hypotheses is relatively small
+
+Examples
+
+- Phase III clinical trials
+- Primary endpoints in biomedical studies
+- regulatory submission analyses
+
+
+
+:::
+---
+
+#### Controlling False Positives in Multiple Hypothesis Testing
+
+::: {style="font-size:0.5em"}
+
+
+**False Discovery Rate [FDR]**
+
+- many hypotheses are tested simultaneously
+- some false positives are acceptable in exchange for increased discovery
+- findings will be validated in future studies
+
+Examples
+
+- gene expression studies
+- GWAS analyses
+- proteomics and other omics studies
+- biomarker discovery projects
+
+:::
+---
+
+
+### Example 1: Multiple Clinical Outcomes
+
+::: {style="font-size:0.72em"}
+
+Background:
+
+A randomized cancer therapy study evaluates whether a new treatment is associated with improvement across six clinical outcomes.
+
+Each outcome represents a separate hypothesis test.
+
+For each outcome:
+
+$$
+H_0: \text{new treatment is not associated with the outcome}
+$$
+
+$$
+H_A: \text{new treatment is associated with the outcome}
+$$
+
+Scientific question:
+
+> Which clinical outcomes remain signficant after accounting for the fact that several hypothesis tests were performed?
+
+:::
+
+---
+
+### Example 1: What Tests Generated These P-values?
+
+::: {style="font-size:0.6em"}
+
+Each p-value comes from a separate hypothesis test evaluating whether treatment is associated with a patient outcome
+
+Possible tests include:
+
+| Outcome | Example hypothesis test |
+|---|---|
+| Response Rate | logistic regression |
+| Symptom Score | Two-sample t test|
+| Quality of Life | linear regression |
+| Hospitalizations | Poisson regression|
+| Overall Survival | Cox regression or log-rank test |
+| Progression-Free Survival | Cox regression or log-rank test |
+
+Each test has its own null hypothesis for example:
+
+$$
+H_0: \text{treatment is not associated with the outcome}
+$$
+
+- all six p-values are interpreted together as evidence about treatment benefit: multiple-testing correction is needed
+
+:::
+
+---
+
+### Example 1: Simulated Clinical Endpoint Results
+
+::: {style="font-size:0.6em"}
+```{r}
+library(tidyverse)
+
+set.seed(300)
+
+clinical_df <- tibble(
+  outcome = c(
+    "Overall Survival",
+    "Progression-Free Survival",
+    "Response Rate",
+    "Symptom Score",
+    "Quality of Life",
+    "Hospitalizations"
+  ),
+  p_value = c(0.002, 0.018, 0.031, 0.041, 0.12, 0.21)
+)
+
+clinical_df
+```
+
+
+**Output Overview**
+
+- table of raw p-values from six hypothesis tests
+
+- each p-value represents evidence against a separate null hypothesis
+
+- raw p-values treats each test as if it were the only test performed
+
+:::
+
+---
+
+### Apply Bonferroni and FDR Correction
+
+::: {style="font-size:0.55em"}
+
+```{r, echo=TRUE}
+clinical_df |>
+  mutate(
+    p_bonferroni = p.adjust(p_value, method = "bonferroni"),
+    p_fdr = p.adjust(p_value, method = "fdr"),
+    raw_significant = p_value <= 0.05,
+    bonferroni_significant = p_bonferroni <= 0.05,
+    fdr_significant = p_fdr <= 0.05
+  )
+
+
+```
+
+
+**Code Interpretation**
+
+`Bonferroni correction` : controls the probability of making at least one false positive across all six tests
+
+`FDR correction`: controls the expected proportion of false positives among the outcomes declared significant
+
+`Central Aim` : Determine whether results remain statistically credible after accounting for all related tests?
+
+- `p_bonferroni`: p-values adjusted to control the probability of at least one false positive
+- `p_fdr`: p-values adjusted using the Benjamini-Hochberg false discovery rate procedure
+- `raw_significant`: significant before correction
+- `bonferroni_significant`: significant after Bonferroni correction
+- `fdr_significant`: significant after FDR correction
+
+:::
+
+---
+
+
+### Apply Bonferroni and FDR Correction
+
+::: {style="font-size:0.55em"}
+
+```{r, echo=TRUE}
+clinical_df |>
+  mutate(
+    p_bonferroni = p.adjust(p_value, method = "bonferroni"),
+    p_fdr = p.adjust(p_value, method = "fdr"),
+    raw_significant = p_value <= 0.05,
+    bonferroni_significant = p_bonferroni <= 0.05,
+    fdr_significant = p_fdr <= 0.05
+  )
+
+
+```
+
+
+**Interpretation**
+
+Raw p-value interpretation - four outcomes appeared statistically significant:
+
+- Overall Survival
+- Progression-Free Survival
+- Response Rate
+- Symptom Score
+
+:::
+
+---
+
+### Apply Bonferroni and FDR Correction
+
+::: {style="font-size:0.55em"}
+
+```{r, echo=TRUE}
+clinical_df |>
+  mutate(
+    p_bonferroni = p.adjust(p_value, method = "bonferroni"),
+    p_fdr = p.adjust(p_value, method = "fdr"),
+    raw_significant = p_value <= 0.05,
+    bonferroni_significant = p_bonferroni <= 0.05,
+    fdr_significant = p_fdr <= 0.05
+  )
+
+
+```
+
+
+**Interpretation**
+
+After applying Bonferroni and FDR correction, only Overall Survival remained statistically significant at: α=0.05
+
+- some significant findings observed in the raw analysis were no longer statistically significant after accounting for multiple hypothesis tests
+- overall Survival showed the strongest evidence against the null hypothesis
+- multiple-testing procedures help distinguish findings that remain credible after considering the full set of hypothesis tests performed
+
+:::
+
+---
+
+### Example 2: Cancer Biomarker Discovery Screen
+
+::: {style="font-size:0.6em"}
+
+Background:
+
+A cancer biomarker discovery study evaluates whether baseline tumor biomarkers are associated with treatment response
+
+The study tests 1,000 biomarkers and 1,000 hypothesis tests generated
+
+**For each biomarker**:
+
+$H_{0j}$ : biomarker j is not associated with treatment response
+
+$H_{Aj}$ : biomarker j is associated with treatment response
+
+
+- each test is evaluated using: α=0.05
+
+- many biomarkers may appear significant by chance alone
+
+:::
+
+---
+
+### Simulate Biomarker P-values
+
+::: {style="font-size:0.6em"}
+```{r}
+set.seed(160)
+
+n_tests <- 1000
+n_true_signals <- 50
+n_null <- n_tests - n_true_signals
+
+biomarker_results <- tibble(
+  biomarker = paste0("BMK", stringr::str_pad(1:n_tests, 4, pad = "0")),
+  truth = c(
+    rep("True association", n_true_signals),
+    rep("No association", n_null)
+  ),
+  p_value = c(
+    rbeta(n_true_signals, shape1 = 0.35, shape2 = 8),
+    runif(n_null, min = 0, max = 1)
+  )
+)
+
+biomarker_results |>
+  slice_head(n = 10)
+```
+
+- simulated dataset contains two types of biomarkers
+
+- some biomarkers have true associations [p-values concentrated near zero]
+
+- most biomarkers have no true association [p-value - distribution between 0 and 1]
+
+- small subset of biomarkers may represent real biological signal
+
+:::
+---
+
+### Raw P-value Results
+
+```{r}
+raw_results <- biomarker_results |>
+  mutate(raw_significant = p_value <= 0.05) |>
+  count(truth, raw_significant)
+
+raw_results
+```
+
+
+::: {style="font-size:0.68em"}
+
+**Table Summary**
+
+- count of biomarkers significant based on unadjusted p-values
+
+- note number of biomarkers with no association that appear significant [n=43] - false positives
+
+- false positives generated because many hypothesis tests were performed
+
+:::
+---
+
+### Bonferroni and FDR Adjustments
+
+::: {style="font-size:0.58em"}
+
+```{r, echo=TRUE}
+biomarker_adjusted <- biomarker_results |>
+  mutate(
+    p_bonferroni = p.adjust(p_value, method = "bonferroni"),
+    p_fdr = p.adjust(p_value, method = "fdr"),
+    raw_significant = p_value <= 0.05,
+    bonferroni_significant = p_bonferroni <= 0.05,
+    fdr_significant = p_fdr <= 0.05
+  )
+
+```
+
+**Code Overview**
+
+Compute Bonferroni-adjusted p-values: `p_bonferroni = p.adjust(p_value, method = "bonferroni")`
+
+Computes Benjamini-Hochberg adjusted p-values: `p_fdr = p.adjust(p_value, method = "fdr")`
+
+Identify biomarkers significant using unadjusted p-values: `raw_significant = p_value <= 0.05`
+
+Identify biomarkers significant after Bonferroni correction: `bonferroni_significant = p_bonferroni <= 0.05`
+
+Identify biomarkers significant after FDR correction: `fdr_significant = p_fdr <= 0.05`
+
+:::
+---
+
+### Bonferroni and FDR Adjustments
+
+::: {style="font-size:0.58em"}
+
+
+```{r}
+biomarker_adjusted <- biomarker_results |>
+  mutate(
+    p_bonferroni = p.adjust(p_value, method = "bonferroni"),
+    p_fdr = p.adjust(p_value, method = "fdr"),
+    raw_significant = p_value <= 0.05,
+    bonferroni_significant = p_bonferroni <= 0.05,
+    fdr_significant = p_fdr <= 0.05
+  )
+
+biomarker_adjusted |>
+  summarise(
+    raw_discoveries = sum(raw_significant),
+    bonferroni_discoveries = sum(bonferroni_significant),
+    fdr_discoveries = sum(fdr_significant)
+  )
+```
+
+Table contains total count of statistically significant biomarkers
+
+- `raw_discoveries`: biomarkers significant using unadjusted p-values
+- `bonferroni_discoveries`: biomarkers significant after strict FWER control
+- `fdr_discoveries`: biomarkers significant after FDR control
+
+:::
+---
+
+### Bonferroni and FDR Adjustments
+
+::: {style="font-size:0.58em"}
+
+
+```{r}
+biomarker_adjusted <- biomarker_results |>
+  mutate(
+    p_bonferroni = p.adjust(p_value, method = "bonferroni"),
+    p_fdr = p.adjust(p_value, method = "fdr"),
+    raw_significant = p_value <= 0.05,
+    bonferroni_significant = p_bonferroni <= 0.05,
+    fdr_significant = p_fdr <= 0.05
+  )
+
+biomarker_adjusted |>
+  summarise(
+    raw_discoveries = sum(raw_significant),
+    bonferroni_discoveries = sum(bonferroni_significant),
+    fdr_discoveries = sum(fdr_significant)
+  )
+```
+
+**Results Interpretation**
+
+- 79 biomarkers had unadjusted p-values ≤ 0.05 [many might be false positives]
+
+- 4 biomarkers remained significant after Bonferroni correction
+
+  - Bonferroni tries to prevent even a single false positive across all tests
+  
+- 9 biomarkers remained significant after FDR correction
+
+  - FDR controls the expected proportion of false positives rather than eliminating them entirely
+
+:::
+---
+
+### Summary
+
+::: {style="font-size:0.72em"}
+
+- multiple hypothesis testing is implemented when many statistical tests are evaluated within the same study
+
+- each hypothesis test produces its own p-value
+- performing many tests increases the chance of false positive findings
+- raw p-values can overstate evidence when many hypotheses are evaluated simultaneously
+multiple-testing procedures help control false discoveries
+
+Two hypothesis correction procedures include:
+
+Family-Wise Error Rate [FWER]/Bonferroni Correction: controls the probability of making at least one false positive
+
+False Discovery Rate [FDR]/Benjamini-Hochberg Correction:	controls the expected proportion of false positives among significant findings
+
+- multiple hypothesis testing correction helps ensure that statistically significant findings remain scientifically credible when many hypotheses are evaluated simultaneously
+
+:::
+
