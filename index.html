@@ -208,7 +208,7 @@
 </section>
 <section class="slide level2">
 
-<h3 id="lecture-overivew">Lecture Overivew</h3>
+<h3 id="lecture-overview">Lecture Overview</h3>
 <div style="font-size:0.76em">
 <p>Previous lecture introduced:</p>
 <ul>
@@ -229,15 +229,11 @@
 <section id="lecture-goals" class="slide level2">
 <h2>Lecture Goals</h2>
 <div style="font-size:0.76em">
-<p>By the end of this lecture, students should be able to:</p>
 <ul>
-<li>translate applied biomedical questions into regression-based hypothesis tests</li>
-<li>identify the regression coefficient being tested</li>
-<li>distinguish unadjusted and adjusted regression models</li>
-<li>interpret linear regression coefficients for continuous outcomes</li>
-<li>interpret logistic regression coefficients, odds ratios, and predicted probabilities for binary outcomes</li>
-<li>connect P-values and confidence intervals to scientific conclusions</li>
-<li>explain why statistical significance and biomedical importance are related but not identical</li>
+<li>formulate null and alternative hypotheses for regression coefficients</li>
+<li>understand how regression test statistics quantify evidence against the null hypothesis</li>
+<li>interpret p-values in the context of regression hypothesis tests</li>
+<li>interpret confidence intervals for regression coefficients and odds ratios</li>
 </ul>
 </div>
 </section>
@@ -597,43 +593,6 @@ F-statistic: 275.3 on 4 and 415 DF,  p-value: &lt; 2.2e-16</code></pre>
 </section>
 <section class="slide level2">
 
-<h3 id="evaluate-linear-regression-results-1">Evaluate Linear Regression Results</h3>
-<div style="font-size:0.6em">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href=""></a>linear_results <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">summary</span>(linear_model)) <span class="sc">|&gt;</span></span>
-<span id="cb6-2"><a href=""></a>  <span class="fu">as.data.frame</span>() <span class="sc">|&gt;</span></span>
-<span id="cb6-3"><a href=""></a>  <span class="fu">rownames_to_column</span>(<span class="st">"term"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb6-4"><a href=""></a>  <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
-<span id="cb6-5"><a href=""></a>  <span class="fu">rename</span>(</span>
-<span id="cb6-6"><a href=""></a>    <span class="at">estimate =</span> Estimate,</span>
-<span id="cb6-7"><a href=""></a>    <span class="at">std_error =</span> <span class="st">`</span><span class="at">Std. Error</span><span class="st">`</span>,</span>
-<span id="cb6-8"><a href=""></a>    <span class="at">test_statistic =</span> <span class="st">`</span><span class="at">t value</span><span class="st">`</span>,</span>
-<span id="cb6-9"><a href=""></a>    <span class="at">p_value =</span> <span class="st">`</span><span class="at">Pr(&gt;|t|)</span><span class="st">`</span></span>
-<span id="cb6-10"><a href=""></a>  )</span>
-<span id="cb6-11"><a href=""></a></span>
-<span id="cb6-12"><a href=""></a>linear_results</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 5 × 5
-  term            estimate std_error test_statistic   p_value
-  &lt;chr&gt;              &lt;dbl&gt;     &lt;dbl&gt;          &lt;dbl&gt;     &lt;dbl&gt;
-1 (Intercept)       2.91      1.03             2.83 4.86e-  3
-2 stage_num         4.28      0.141           30.4  1.12e-107
-3 age               0.0388    0.0152           2.56 1.09e-  2
-4 mutation_binary   3.09      0.304           10.2  8.98e- 22
-5 baseline_burden   0.190     0.0237           8.01 1.13e- 14</code></pre>
-</div>
-</div>
-<p><strong>Example Interpretation</strong>:</p>
-<ul>
-<li><p>coefficient for <code>stage_num</code> estimates the expected difference in tumor biomarker level associated with a one-stage increase in tumor stage</p></li>
-<li><p>positive coefficient : later tumor stage is associated with a higher expected tumor marker level</p></li>
-<li><p><code>stage_num</code>: p-value evaluates whether the observed stage coefficient is unlikely under the null hypothesis that the population coefficient is zero</p></li>
-<li><p>small p-value suggests the observed relationship between the predictor and biomarker level is unlikely to be due to random sampling variability alone</p></li>
-</ul>
-</div>
-</section>
-<section class="slide level2">
-
 <h3 id="logistic-regression-practical-application">Logistic Regression: Practical Application</h3>
 <div style="font-size:0.6em">
 <p>Logistic regression is used when the outcome variable has only two possible categories</p>
@@ -719,13 +678,13 @@ H_a: \beta_{mutation} \neq 0
 <h3 id="fit-the-logistic-regression-model">Fit the Logistic Regression Model</h3>
 <div style="font-size:0.6em">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href=""></a>logistic_model <span class="ot">&lt;-</span> <span class="fu">glm</span>(</span>
-<span id="cb8-2"><a href=""></a>  response <span class="sc">~</span> mutation_binary <span class="sc">+</span> stage_num <span class="sc">+</span> age <span class="sc">+</span> baseline_burden,</span>
-<span id="cb8-3"><a href=""></a>  <span class="at">data =</span> cancer_df,</span>
-<span id="cb8-4"><a href=""></a>  <span class="at">family =</span> binomial</span>
-<span id="cb8-5"><a href=""></a>)</span>
-<span id="cb8-6"><a href=""></a></span>
-<span id="cb8-7"><a href=""></a><span class="fu">summary</span>(logistic_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href=""></a>logistic_model <span class="ot">&lt;-</span> <span class="fu">glm</span>(</span>
+<span id="cb6-2"><a href=""></a>  response <span class="sc">~</span> mutation_binary <span class="sc">+</span> stage_num <span class="sc">+</span> age <span class="sc">+</span> baseline_burden,</span>
+<span id="cb6-3"><a href=""></a>  <span class="at">data =</span> cancer_df,</span>
+<span id="cb6-4"><a href=""></a>  <span class="at">family =</span> binomial</span>
+<span id="cb6-5"><a href=""></a>)</span>
+<span id="cb6-6"><a href=""></a></span>
+<span id="cb6-7"><a href=""></a><span class="fu">summary</span>(logistic_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -895,7 +854,7 @@ Number of Fisher Scoring iterations: 4</code></pre>
 </section>
 <section class="slide level2">
 
-<h3 id="lecture-summary">Lecture Summary</h3>
+<h3 id="summary">Summary</h3>
 <div style="font-size:0.6em">
 <ul>
 <li>application of hypothesis testing within regression analysis</li>

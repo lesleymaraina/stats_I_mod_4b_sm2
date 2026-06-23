@@ -14,7 +14,7 @@ execute:
   message: false
 ---
 
-### Lecture Overivew
+### Lecture Overview
 
 ::: {style="font-size:0.76em"}
 
@@ -44,15 +44,11 @@ Extend hypothesis testing into regression settings using linear and logistic reg
 
 ::: {style="font-size:0.76em"}
 
-By the end of this lecture, students should be able to:
+- formulate null and alternative hypotheses for regression coefficients
+- understand how regression test statistics quantify evidence against the null hypothesis
+- interpret p-values in the context of regression hypothesis tests
+- interpret confidence intervals for regression coefficients and odds ratios
 
-- translate applied biomedical questions into regression-based hypothesis tests
-- identify the regression coefficient being tested
-- distinguish unadjusted and adjusted regression models
-- interpret linear regression coefficients for continuous outcomes
-- interpret logistic regression coefficients, odds ratios, and predicted probabilities for binary outcomes
-- connect P-values and confidence intervals to scientific conclusions
-- explain why statistical significance and biomedical importance are related but not identical
 
 :::
 
@@ -456,37 +452,6 @@ For each coefficient, the output includes:
 :::
 ---
 
-### Evaluate Linear Regression Results
-::: {style="font-size:0.6em"}
-```{r}
-#| label: extract-linear-regression-results1
-linear_results <- coef(summary(linear_model)) |>
-  as.data.frame() |>
-  rownames_to_column("term") |>
-  as_tibble() |>
-  rename(
-    estimate = Estimate,
-    std_error = `Std. Error`,
-    test_statistic = `t value`,
-    p_value = `Pr(>|t|)`
-  )
-
-linear_results
-```
-
-**Example Interpretation**:
-
-- coefficient for `stage_num` estimates the expected difference in tumor biomarker level associated with a one-stage increase in tumor stage
-
-- positive coefficient : later tumor stage is associated with a higher expected tumor marker level
-
-- `stage_num`: p-value evaluates whether the observed stage coefficient is unlikely under the null hypothesis that the population coefficient is zero
-
-- small p-value suggests the observed relationship between the predictor and biomarker level is unlikely to be due to random sampling variability alone
-
-:::
----
-
 
 ### Logistic Regression: Practical Application
 
@@ -819,7 +784,7 @@ p-value indicates insufficient evidence that the population coefficient differs 
 :::
 ---
 
-### Lecture Summary
+### Summary
 
 ::: {style="font-size:0.6em"}
 
